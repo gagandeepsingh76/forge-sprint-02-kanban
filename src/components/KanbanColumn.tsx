@@ -1,5 +1,10 @@
 "use client";
 
+import { useDroppable } from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import type { KanbanColumn as KanbanColumnType, Task, TaskStatus } from "@/types/kanban";
 import { TaskCard } from "@/components/TaskCard";
 
@@ -20,8 +25,21 @@ export function KanbanColumn({
   onDeleteTask,
   onMoveTask,
 }: KanbanColumnProps) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `column-${column.id}`,
+    data: {
+      type: "column",
+      status: column.id,
+    },
+  });
+
   return (
-    <section className="flex min-h-[28rem] flex-col rounded-lg border border-slate-200 bg-slate-50">
+    <section
+      ref={setNodeRef}
+      className={`flex min-h-[28rem] flex-col rounded-lg border bg-slate-50 transition ${
+        isOver ? "border-slate-400 ring-2 ring-slate-200" : "border-slate-200"
+      }`}
+    >
       <div className="border-b border-slate-200 p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -35,22 +53,27 @@ export function KanbanColumn({
       </div>
 
       <div className="flex flex-1 flex-col gap-3 p-3">
-        {tasks.length > 0 ? (
-          tasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              availableStatuses={availableStatuses}
-              onEdit={onEditTask}
-              onDelete={onDeleteTask}
-              onMove={onMoveTask}
-            />
-          ))
-        ) : (
-          <div className="flex min-h-40 items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white/70 p-6 text-center text-sm font-medium text-slate-400">
-            Drop new work here
-          </div>
-        )}
+        <SortableContext
+          items={tasks.map((task) => task.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {tasks.length > 0 ? (
+            tasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                availableStatuses={availableStatuses}
+                onEdit={onEditTask}
+                onDelete={onDeleteTask}
+                onMove={onMoveTask}
+              />
+            ))
+          ) : (
+            <div className="flex min-h-40 items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white/70 p-6 text-center text-sm font-medium text-slate-400">
+              Drop new work here
+            </div>
+          )}
+        </SortableContext>
       </div>
     </section>
   );

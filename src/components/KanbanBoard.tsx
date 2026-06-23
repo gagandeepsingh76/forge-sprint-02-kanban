@@ -1,18 +1,38 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import {
+  closestCorners,
+  DndContext,
+  DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { initialBoard } from "@/data/initial-board";
 import { useKanbanBoard } from "@/hooks/use-kanban-board";
-import type { Task, TaskFormValues } from "@/types/kanban";
+import type { Task, TaskFormValues, TaskStatus } from "@/types/kanban";
 import { AddTaskModal } from "@/components/AddTaskModal";
 import { KanbanColumn } from "@/components/KanbanColumn";
 import { Navbar } from "@/components/Navbar";
 
 export function KanbanBoard() {
-  const { board, taskCount, addTask, editTask, deleteTask, moveTask } =
+  const { board, taskCount, addTask, editTask, deleteTask, moveTask, reorderTask } =
     useKanbanBoard(initialBoard);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
 
   const statuses = useMemo(
     () => board.columns.map((column) => column.id),
@@ -44,6 +64,34 @@ export function KanbanBoard() {
     closeTaskModal();
   };
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over) {
+      return;
+    }
+
+    const overData = over.data.current;
+    const activeData = active.data.current;
+
+    if (activeData?.type !== "task") {
+      return;
+    }
+
+    if (overData?.type === "column") {
+      reorderTask(String(active.id), overData.status as TaskStatus);
+      return;
+    }
+
+    if (overData?.type === "task") {
+      reorderTask(
+        String(active.id),
+        overData.status as TaskStatus,
+        String(over.id),
+      );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-100">
       <Navbar
@@ -72,21 +120,27 @@ export function KanbanBoard() {
           </div>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-3">
-          {board.columns.map((column) => (
-            <KanbanColumn
-              key={column.id}
-              column={column}
-              tasks={column.taskIds
-                .map((taskId) => board.tasks[taskId])
-                .filter(Boolean)}
-              availableStatuses={statuses}
-              onEditTask={openEditTaskModal}
-              onDeleteTask={deleteTask}
-              onMoveTask={moveTask}
-            />
-          ))}
-        </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="grid gap-4 lg:grid-cols-3">
+            {board.columns.map((column) => (
+              <KanbanColumn
+                key={column.id}
+                column={column}
+                tasks={column.taskIds
+                  .map((taskId) => board.tasks[taskId])
+                  .filter(Boolean)}
+                availableStatuses={statuses}
+                onEditTask={openEditTaskModal}
+                onDeleteTask={deleteTask}
+                onMoveTask={moveTask}
+              />
+            ))}
+          </div>
+        </DndContext>
       </main>
 
       {isTaskModalOpen ? (

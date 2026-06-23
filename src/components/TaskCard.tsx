@@ -1,5 +1,8 @@
 "use client";
 
+import type { CSSProperties } from "react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { Task, TaskStatus } from "@/types/kanban";
 
 const priorityStyles: Record<Task["priority"], string> = {
@@ -24,11 +27,49 @@ export function TaskCard({
   onDelete,
   onMove,
 }: TaskCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: task.id,
+    data: {
+      type: "task",
+      status: task.status,
+    },
+  });
+  const style: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+    <article
+      ref={setNodeRef}
+      style={style}
+      className={`rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md ${
+        isDragging ? "relative z-10 opacity-70 ring-2 ring-slate-300" : ""
+      }`}
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="font-semibold leading-6 text-slate-950">{task.title}</h3>
+          <div className="flex items-start gap-2">
+            <button
+              type="button"
+              className="mt-0.5 cursor-grab rounded-md border border-slate-200 px-2 py-1 text-xs font-bold text-slate-400 transition hover:bg-slate-50 active:cursor-grabbing"
+              aria-label={`Drag ${task.title}`}
+              {...attributes}
+              {...listeners}
+            >
+              Drag
+            </button>
+            <h3 className="font-semibold leading-6 text-slate-950">
+              {task.title}
+            </h3>
+          </div>
           <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600">
             {task.description}
           </p>

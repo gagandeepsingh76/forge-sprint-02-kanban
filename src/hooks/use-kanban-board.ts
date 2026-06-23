@@ -144,6 +144,72 @@ export function useKanbanBoard(initialBoard: Board) {
     });
   }, []);
 
+  const reorderTask = useCallback(
+    (taskId: string, targetStatus: TaskStatus, targetTaskId?: string) => {
+      const timestamp = new Date().toISOString();
+
+      setBoard((currentBoard) => {
+        const task = currentBoard.tasks[taskId];
+
+        if (!task) {
+          return currentBoard;
+        }
+
+        const sourceColumn = currentBoard.columns.find((column) =>
+          column.taskIds.includes(taskId),
+        );
+        const targetColumn = currentBoard.columns.find(
+          (column) => column.id === targetStatus,
+        );
+
+        if (!sourceColumn || !targetColumn) {
+          return currentBoard;
+        }
+
+        const nextColumns = currentBoard.columns.map((column) => {
+          const withoutDraggedTask = column.taskIds.filter((id) => id !== taskId);
+
+          if (column.id !== targetStatus) {
+            return {
+              ...column,
+              taskIds: withoutDraggedTask,
+            };
+          }
+
+          const insertionIndex = targetTaskId
+            ? withoutDraggedTask.indexOf(targetTaskId)
+            : withoutDraggedTask.length;
+          const safeInsertionIndex =
+            insertionIndex >= 0 ? insertionIndex : withoutDraggedTask.length;
+
+          return {
+            ...column,
+            taskIds: [
+              ...withoutDraggedTask.slice(0, safeInsertionIndex),
+              taskId,
+              ...withoutDraggedTask.slice(safeInsertionIndex),
+            ],
+          };
+        });
+
+        return {
+          ...currentBoard,
+          tasks: {
+            ...currentBoard.tasks,
+            [taskId]: {
+              ...task,
+              status: targetStatus,
+              updatedAt: timestamp,
+            },
+          },
+          columns: nextColumns,
+          updatedAt: timestamp,
+        };
+      });
+    },
+    [],
+  );
+
   return {
     board,
     taskCount,
@@ -151,5 +217,6 @@ export function useKanbanBoard(initialBoard: Board) {
     editTask,
     deleteTask,
     moveTask,
+    reorderTask,
   };
 }
