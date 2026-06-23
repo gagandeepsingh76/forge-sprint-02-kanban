@@ -16,8 +16,10 @@ import { initialBoard } from "@/data/initial-board";
 import { useKanbanBoard } from "@/hooks/use-kanban-board";
 import type { Task, TaskFormValues, TaskStatus } from "@/types/kanban";
 import { AddTaskModal } from "@/components/AddTaskModal";
+import { EditTaskModal } from "@/components/EditTaskModal";
 import { KanbanColumn } from "@/components/KanbanColumn";
 import { Navbar } from "@/components/Navbar";
+import { Sidebar } from "@/components/Sidebar";
 
 export function KanbanBoard() {
   const {
@@ -28,6 +30,12 @@ export function KanbanBoard() {
     deleteTask,
     moveTask,
     reorderTask,
+    boards,
+    activeBoardId,
+    createBoard,
+    renameBoard,
+    deleteBoard,
+    switchBoard,
   } = useKanbanBoard(initialBoard);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -46,6 +54,11 @@ export function KanbanBoard() {
     () => board.columns.map((column) => column.id),
     [board.columns],
   );
+  const activeTaskCount =
+    board.columns.find((column) => column.id === "in-progress")?.taskIds
+      .length ?? 0;
+  const completedTaskCount =
+    board.columns.find((column) => column.id === "done")?.taskIds.length ?? 0;
 
   const openAddTaskModal = () => {
     setEditingTask(null);
@@ -104,8 +117,14 @@ export function KanbanBoard() {
     <div className="min-h-screen bg-background">
       <Navbar
         boardTitle={board.title}
+        boards={boards}
+        activeBoardId={activeBoardId}
         taskCount={taskCount}
         onAddTask={openAddTaskModal}
+        onSwitchBoard={switchBoard}
+        onCreateBoard={createBoard}
+        onRenameBoard={renameBoard}
+        onDeleteBoard={deleteBoard}
       />
 
       <main className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8">
@@ -133,16 +152,14 @@ export function KanbanBoard() {
             <div className="rounded-md bg-indigo-50 p-3 text-indigo-900 dark:bg-indigo-400/10 dark:text-indigo-200">
               <TimerReset size={18} />
               <p className="mt-3 text-lg font-bold">
-                {board.columns.find((column) => column.id === "in-progress")
-                  ?.taskIds.length ?? 0}
+                {activeTaskCount}
               </p>
               <p className="text-xs font-semibold uppercase">Active</p>
             </div>
             <div className="rounded-md bg-emerald-50 p-3 text-emerald-900 dark:bg-emerald-400/10 dark:text-emerald-200">
               <CheckCircle2 size={18} />
               <p className="mt-3 text-lg font-bold">
-                {board.columns.find((column) => column.id === "done")?.taskIds
-                  .length ?? 0}
+                {completedTaskCount}
               </p>
               <p className="text-xs font-semibold uppercase">Done</p>
             </div>
@@ -154,33 +171,52 @@ export function KanbanBoard() {
           </p>
         </section>
 
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCorners}
-          onDragEnd={handleDragEnd}
-        >
-          <div className="grid gap-4 lg:grid-cols-3">
-            {board.columns.map((column) => (
-              <KanbanColumn
-                key={column.id}
-                column={column}
-                tasks={column.taskIds
-                  .map((taskId) => board.tasks[taskId])
-                  .filter(Boolean)}
-                availableStatuses={statuses}
-                onEditTask={openEditTaskModal}
-                onDeleteTask={deleteTask}
-                onMoveTask={moveTask}
-              />
-            ))}
-          </div>
-        </DndContext>
+        <div className="grid gap-4 lg:grid-cols-[16rem_1fr]">
+          <Sidebar
+            boards={boards}
+            activeBoardId={activeBoardId}
+            activeTaskCount={activeTaskCount}
+            completedTaskCount={completedTaskCount}
+            onSwitchBoard={switchBoard}
+            onCreateBoard={createBoard}
+          />
+
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="grid gap-4 xl:grid-cols-3">
+              {board.columns.map((column) => (
+                <KanbanColumn
+                  key={column.id}
+                  column={column}
+                  tasks={column.taskIds
+                    .map((taskId) => board.tasks[taskId])
+                    .filter(Boolean)}
+                  availableStatuses={statuses}
+                  onEditTask={openEditTaskModal}
+                  onDeleteTask={deleteTask}
+                  onMoveTask={moveTask}
+                />
+              ))}
+            </div>
+          </DndContext>
+        </div>
       </main>
 
-      {isTaskModalOpen ? (
+      {isTaskModalOpen && editingTask ? (
+        <EditTaskModal
+          task={editingTask}
+          statuses={statuses}
+          onClose={closeTaskModal}
+          onSubmit={handleTaskSubmit}
+        />
+      ) : null}
+
+      {isTaskModalOpen && !editingTask ? (
         <AddTaskModal
           statuses={statuses}
-          editingTask={editingTask}
           onClose={closeTaskModal}
           onSubmit={handleTaskSubmit}
         />

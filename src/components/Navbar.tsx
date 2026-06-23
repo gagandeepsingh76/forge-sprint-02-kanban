@@ -2,15 +2,33 @@
 
 import { LogOut, Moon, Plus, Sun } from "lucide-react";
 import { signOut } from "next-auth/react";
+import { BoardSwitcher } from "@/components/BoardSwitcher";
 import { useTheme } from "@/hooks/use-theme";
+import type { Board } from "@/types/kanban";
 
 interface NavbarProps {
   boardTitle: string;
+  boards: Board[];
+  activeBoardId: string;
   taskCount: number;
   onAddTask: () => void;
+  onSwitchBoard: (boardId: string) => void;
+  onCreateBoard: (title: string) => void;
+  onRenameBoard: (boardId: string, title: string) => void;
+  onDeleteBoard: (boardId: string) => void;
 }
 
-export function Navbar({ boardTitle, taskCount, onAddTask }: NavbarProps) {
+export function Navbar({
+  boardTitle,
+  boards,
+  activeBoardId,
+  taskCount,
+  onAddTask,
+  onSwitchBoard,
+  onCreateBoard,
+  onRenameBoard,
+  onDeleteBoard,
+}: NavbarProps) {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
 
@@ -24,6 +42,14 @@ export function Navbar({ boardTitle, taskCount, onAddTask }: NavbarProps) {
           </h1>
         </div>
         <div className="flex flex-wrap items-center gap-3">
+          <BoardSwitcher
+            boards={boards}
+            activeBoardId={activeBoardId}
+            onSwitchBoard={onSwitchBoard}
+            onCreateBoard={onCreateBoard}
+            onRenameBoard={onRenameBoard}
+            onDeleteBoard={onDeleteBoard}
+          />
           <div className="rounded-full border border-border bg-surface-muted px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300">
             {taskCount} tasks
           </div>

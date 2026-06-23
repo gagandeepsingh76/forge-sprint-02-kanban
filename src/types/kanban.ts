@@ -38,6 +38,11 @@ export interface Board {
   updatedAt: string;
 }
 
+export interface BoardCollection {
+  activeBoardId: string;
+  boards: Board[];
+}
+
 export interface TaskFormValues {
   title: string;
   description: string;
