@@ -1,0 +1,43 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/forge_sprint_kanban
+      NEXTAUTH_SECRET: change-me-to-a-32-character-secret
+      NEXTAUTH_URL: http://localhost:3000
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash}
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
+      OPENCLAW_GATEWAY_URL: ${OPENCLAW_GATEWAY_URL:-}
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:-}
+      OPENCLAW_AGENT_ID: ${OPENCLAW_AGENT_ID:-main}
+      OPENCLAW_MODEL: ${OPENCLAW_MODEL:-openclaw/default}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-120}
+      AI_RATE_LIMIT_MAX: ${AI_RATE_LIMIT_MAX:-30}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
+    ports:
+      - "3000:3000"
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: forge_sprint_kanban
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d forge_sprint_kanban"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  postgres-data:
