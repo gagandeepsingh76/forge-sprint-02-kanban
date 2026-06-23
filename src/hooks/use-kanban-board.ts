@@ -5,6 +5,7 @@ import {
   loadBoardCollection,
   saveBoardCollection,
 } from "@/lib/board-storage";
+import { notifySlack } from "@/lib/slack-client";
 import type {
   Board,
   BoardCollection,
@@ -100,6 +101,11 @@ export function useKanbanBoard(initialBoard: Board) {
       activeBoardId: boardToCreate.id,
       boards: [...currentCollection.boards, boardToCreate],
     }));
+
+    void notifySlack({
+      event: "board.created",
+      boardTitle: boardToCreate.title,
+    });
   }, []);
 
   const renameBoard = useCallback((boardId: string, title: string) => {
@@ -196,8 +202,25 @@ export function useKanbanBoard(initialBoard: Board) {
         ),
         updatedAt: timestamp,
       }));
+
+      void notifySlack({
+        event: "task.created",
+        boardTitle: board.title,
+        taskTitle: task.title,
+        priority: task.priority,
+      });
+
+      if (task.assignee) {
+        void notifySlack({
+          event: "task.assigned",
+          boardTitle: board.title,
+          taskTitle: task.title,
+          assignee: task.assignee,
+          priority: task.priority,
+        });
+      }
     },
-    [updateActiveBoard],
+    [board.title, updateActiveBoard],
   );
 
   const editTask = useCallback(
@@ -243,8 +266,29 @@ export function useKanbanBoard(initialBoard: Board) {
           updatedAt: timestamp,
         };
       });
+
+      const existingTask = board.tasks[taskId];
+
+      if (existingTask?.status !== "done" && values.status === "done") {
+        void notifySlack({
+          event: "task.completed",
+          boardTitle: board.title,
+          taskTitle: values.title,
+          priority: values.priority,
+        });
+      }
+
+      if (values.assignee && values.assignee !== existingTask?.assignee) {
+        void notifySlack({
+          event: "task.assigned",
+          boardTitle: board.title,
+          taskTitle: values.title,
+          assignee: values.assignee,
+          priority: values.priority,
+        });
+      }
     },
-    [updateActiveBoard],
+    [board.tasks, board.title, updateActiveBoard],
   );
 
   const deleteTask = useCallback(
@@ -265,6 +309,7 @@ export function useKanbanBoard(initialBoard: Board) {
           updatedAt: timestamp,
         };
       });
+
     },
     [updateActiveBoard],
   );
@@ -307,8 +352,19 @@ export function useKanbanBoard(initialBoard: Board) {
           updatedAt: timestamp,
         };
       });
+
+      const existingTask = board.tasks[taskId];
+
+      if (existingTask?.status !== "done" && targetStatus === "done") {
+        void notifySlack({
+          event: "task.completed",
+          boardTitle: board.title,
+          taskTitle: existingTask.title,
+          priority: existingTask.priority,
+        });
+      }
     },
-    [updateActiveBoard],
+    [board.tasks, board.title, updateActiveBoard],
   );
 
   const reorderTask = useCallback(
@@ -373,8 +429,19 @@ export function useKanbanBoard(initialBoard: Board) {
           updatedAt: timestamp,
         };
       });
+
+      const existingTask = board.tasks[taskId];
+
+      if (existingTask?.status !== "done" && targetStatus === "done") {
+        void notifySlack({
+          event: "task.completed",
+          boardTitle: board.title,
+          taskTitle: existingTask.title,
+          priority: existingTask.priority,
+        });
+      }
     },
-    [updateActiveBoard],
+    [board.tasks, board.title, updateActiveBoard],
   );
 
   return {
