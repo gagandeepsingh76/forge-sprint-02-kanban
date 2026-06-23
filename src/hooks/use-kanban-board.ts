@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { loadBoard, saveBoard } from "@/lib/board-storage";
 import type { Board, Task, TaskFormValues, TaskStatus } from "@/types/kanban";
 
 const createTaskId = () => {
@@ -12,9 +13,13 @@ const createTaskId = () => {
 };
 
 export function useKanbanBoard(initialBoard: Board) {
-  const [board, setBoard] = useState<Board>(initialBoard);
+  const [board, setBoard] = useState<Board>(() => loadBoard() ?? initialBoard);
 
   const taskCount = useMemo(() => Object.keys(board.tasks).length, [board.tasks]);
+
+  useEffect(() => {
+    saveBoard(board);
+  }, [board]);
 
   const addTask = useCallback((values: TaskFormValues) => {
     const taskId = createTaskId();
