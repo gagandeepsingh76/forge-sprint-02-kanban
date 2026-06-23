@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { signIn } from "next-auth/react";
 import { Loader2, LogIn, UserPlus } from "lucide-react";
+import { loginSchema, registerSchema } from "@/lib/validations/auth";
 
 type AuthMode = "login" | "signup";
 
@@ -27,6 +28,15 @@ export function AuthForm({ mode }: AuthFormProps) {
     const email = String(formData.get("email") ?? "");
     const password = String(formData.get("password") ?? "");
     const name = String(formData.get("name") ?? "");
+    const parsedCredentials = isSignup
+      ? registerSchema.safeParse({ name, email, password })
+      : loginSchema.safeParse({ email, password });
+
+    if (!parsedCredentials.success) {
+      setError(parsedCredentials.error.issues[0]?.message ?? "Invalid input.");
+      setIsPending(false);
+      return;
+    }
 
     if (isSignup) {
       const response = await fetch("/api/auth/register", {
@@ -34,7 +44,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify(parsedCredentials.data),
       });
 
       if (!response.ok) {
@@ -48,8 +58,8 @@ export function AuthForm({ mode }: AuthFormProps) {
     }
 
     const result = await signIn("credentials", {
-      email,
-      password,
+      email: parsedCredentials.data.email,
+      password: parsedCredentials.data.password,
       redirect: false,
     });
 

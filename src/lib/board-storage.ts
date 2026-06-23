@@ -1,4 +1,5 @@
 import type { Board, BoardCollection } from "@/types/kanban";
+import { boardCollectionSchema, boardSchema } from "@/lib/validations/kanban";
 
 const BOARD_STORAGE_KEY = "forge-sprint-kanban-board";
 const BOARD_COLLECTION_STORAGE_KEY = "forge-sprint-kanban-board-collection";
@@ -18,36 +19,6 @@ function canUseStorage() {
   return typeof window !== "undefined" && Boolean(window.localStorage);
 }
 
-function isBoard(value: unknown): value is Board {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const candidate = value as Partial<Board>;
-
-  return (
-    typeof candidate.id === "string" &&
-    typeof candidate.title === "string" &&
-    Array.isArray(candidate.columns) &&
-    typeof candidate.tasks === "object" &&
-    candidate.tasks !== null
-  );
-}
-
-function isBoardCollection(value: unknown): value is BoardCollection {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const candidate = value as Partial<BoardCollection>;
-
-  return (
-    typeof candidate.activeBoardId === "string" &&
-    Array.isArray(candidate.boards) &&
-    candidate.boards.every(isBoard)
-  );
-}
-
 function isVersionedBoardPayload(
   value: unknown,
 ): value is VersionedBoardPayload {
@@ -57,7 +28,10 @@ function isVersionedBoardPayload(
 
   const candidate = value as Partial<VersionedBoardPayload>;
 
-  return typeof candidate.version === "number" && isBoard(candidate.board);
+  return (
+    typeof candidate.version === "number" &&
+    boardSchema.safeParse(candidate.board).success
+  );
 }
 
 function isVersionedBoardCollectionPayload(
@@ -71,7 +45,7 @@ function isVersionedBoardCollectionPayload(
 
   return (
     typeof candidate.version === "number" &&
-    isBoardCollection(candidate.collection)
+    boardCollectionSchema.safeParse(candidate.collection).success
   );
 }
 
@@ -98,7 +72,10 @@ export function saveBoardCollection(collection: BoardCollection) {
     collection,
   };
 
-  window.localStorage.setItem(BOARD_COLLECTION_STORAGE_KEY, JSON.stringify(payload));
+  window.localStorage.setItem(
+    BOARD_COLLECTION_STORAGE_KEY,
+    JSON.stringify(payload),
+  );
 }
 
 export function loadBoard() {
@@ -119,7 +96,8 @@ export function loadBoard() {
       return parsedBoard.board;
     }
 
-    return isBoard(parsedBoard) ? parsedBoard : null;
+    const parsedLegacyBoard = boardSchema.safeParse(parsedBoard);
+    return parsedLegacyBoard.success ? parsedLegacyBoard.data : null;
   } catch {
     return null;
   }
@@ -148,11 +126,11 @@ export function loadBoardCollection(initialBoard: Board): BoardCollection {
         return parsedCollection.collection;
       }
 
-      if (
-        isBoardCollection(parsedCollection) &&
-        parsedCollection.boards.length > 0
-      ) {
-        return parsedCollection;
+      const parsedLegacyCollection =
+        boardCollectionSchema.safeParse(parsedCollection);
+
+      if (parsedLegacyCollection.success) {
+        return parsedLegacyCollection.data;
       }
     } catch {
       window.localStorage.removeItem(BOARD_COLLECTION_STORAGE_KEY);

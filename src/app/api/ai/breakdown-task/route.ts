@@ -1,7 +1,13 @@
 import { getServerSession } from "next-auth";
 import { breakdownTaskJsonSchema } from "@/lib/ai-json-schemas";
 import { authOptions } from "@/lib/auth";
+import { apiOk } from "@/lib/api-response";
 import { GeminiConfigurationError, callGeminiJson } from "@/lib/gemini";
+import {
+  HttpError,
+  parseJsonBody,
+  withRouteHandler,
+} from "@/lib/route-handler";
 import {
   breakdownTaskRequestSchema,
   breakdownTaskResponseSchema,
@@ -9,21 +15,18 @@ import {
 
 export const runtime = "nodejs";
 
-export async function POST(request: Request) {
+export const POST = withRouteHandler("ai.breakdown_task", async (request) => {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+    throw new HttpError(401, "Unauthorized", "UNAUTHORIZED");
   }
 
-  const body: unknown = await request.json().catch(() => null);
-  const parsedBody = breakdownTaskRequestSchema.safeParse(body);
-
-  if (!parsedBody.success) {
-    return Response.json({ error: "Provide a valid task." }, { status: 400 });
-  }
-
-  const { taskTitle, taskDescription, desiredSubtasks } = parsedBody.data;
+  const { taskTitle, taskDescription, desiredSubtasks } = await parseJsonBody(
+    request,
+    breakdownTaskRequestSchema,
+    "Provide a valid task.",
+  );
 
   try {
     const result = await callGeminiJson({
@@ -38,15 +41,16 @@ export async function POST(request: Request) {
       ].join("\n"),
     });
 
-    return Response.json(result);
+    return apiOk(result);
   } catch (error) {
     if (error instanceof GeminiConfigurationError) {
-      return Response.json({ error: error.message }, { status: 503 });
+      throw new HttpError(503, error.message, "GEMINI_NOT_CONFIGURED");
     }
 
-    return Response.json(
-      { error: "Unable to break down task right now." },
-      { status: 502 },
+    throw new HttpError(
+      502,
+      "Unable to break down task right now.",
+      "GEMINI_REQUEST_FAILED",
     );
   }
-}
+});

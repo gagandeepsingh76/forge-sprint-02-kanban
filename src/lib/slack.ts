@@ -1,5 +1,6 @@
 import "server-only";
 
+import { env } from "@/lib/env";
 import type { SlackNotificationPayload } from "@/types/slack";
 
 const eventLabels: Record<SlackNotificationPayload["event"], string> = {
@@ -37,13 +38,11 @@ function formatSlackText(payload: SlackNotificationPayload) {
 export async function sendSlackNotification(
   payload: SlackNotificationPayload,
 ) {
-  const webhookUrl = process.env.SLACK_WEBHOOK_URL;
-
-  if (!webhookUrl) {
+  if (!env.SLACK_WEBHOOK_URL) {
     return { delivered: false, skipped: true };
   }
 
-  const response = await fetch(webhookUrl, {
+  const response = await fetch(env.SLACK_WEBHOOK_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

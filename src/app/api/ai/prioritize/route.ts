@@ -1,7 +1,13 @@
 import { getServerSession } from "next-auth";
 import { prioritizeTasksJsonSchema } from "@/lib/ai-json-schemas";
 import { authOptions } from "@/lib/auth";
+import { apiOk } from "@/lib/api-response";
 import { GeminiConfigurationError, callGeminiJson } from "@/lib/gemini";
+import {
+  HttpError,
+  parseJsonBody,
+  withRouteHandler,
+} from "@/lib/route-handler";
 import {
   prioritizeTasksRequestSchema,
   prioritizeTasksResponseSchema,
@@ -9,22 +15,18 @@ import {
 
 export const runtime = "nodejs";
 
-export async function POST(request: Request) {
+export const POST = withRouteHandler("ai.prioritize", async (request) => {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+    throw new HttpError(401, "Unauthorized", "UNAUTHORIZED");
   }
 
-  const body: unknown = await request.json().catch(() => null);
-  const parsedBody = prioritizeTasksRequestSchema.safeParse(body);
-
-  if (!parsedBody.success) {
-    return Response.json(
-      { error: "Provide at least one task to prioritize." },
-      { status: 400 },
-    );
-  }
+  const body = await parseJsonBody(
+    request,
+    prioritizeTasksRequestSchema,
+    "Provide at least one task to prioritize.",
+  );
 
   try {
     const result = await callGeminiJson({
@@ -33,20 +35,21 @@ export async function POST(request: Request) {
       prompt: [
         "Prioritize these Kanban tasks for a delivery team.",
         "Return a matching task list with priority, rationale, and suggestedDueDate when useful.",
-        `Project goal: ${parsedBody.data.projectGoal ?? "Not provided."}`,
-        `Tasks: ${JSON.stringify(parsedBody.data.tasks)}`,
+        `Project goal: ${body.projectGoal ?? "Not provided."}`,
+        `Tasks: ${JSON.stringify(body.tasks)}`,
       ].join("\n"),
     });
 
-    return Response.json(result);
+    return apiOk(result);
   } catch (error) {
     if (error instanceof GeminiConfigurationError) {
-      return Response.json({ error: error.message }, { status: 503 });
+      throw new HttpError(503, error.message, "GEMINI_NOT_CONFIGURED");
     }
 
-    return Response.json(
-      { error: "Unable to prioritize tasks right now." },
-      { status: 502 },
+    throw new HttpError(
+      502,
+      "Unable to prioritize tasks right now.",
+      "GEMINI_REQUEST_FAILED",
     );
   }
-}
+});

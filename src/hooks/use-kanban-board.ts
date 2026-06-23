@@ -6,6 +6,7 @@ import {
   saveBoardCollection,
 } from "@/lib/board-storage";
 import { notifySlack } from "@/lib/slack-client";
+import { boardTitleSchema, taskFormSchema } from "@/lib/validations/kanban";
 import type {
   Board,
   BoardCollection,
@@ -65,7 +66,9 @@ export function useKanbanBoard(initialBoard: Board) {
 
   const board = useMemo(() => {
     return (
-      collection.boards.find((candidate) => candidate.id === collection.activeBoardId) ??
+      collection.boards.find(
+        (candidate) => candidate.id === collection.activeBoardId,
+      ) ??
       collection.boards[0] ??
       initialBoard
     );
@@ -89,13 +92,13 @@ export function useKanbanBoard(initialBoard: Board) {
   }, []);
 
   const createBoard = useCallback((title: string) => {
-    const trimmedTitle = title.trim();
+    const parsedTitle = boardTitleSchema.safeParse(title);
 
-    if (!trimmedTitle) {
+    if (!parsedTitle.success) {
       return;
     }
 
-    const boardToCreate = createBlankBoard(trimmedTitle);
+    const boardToCreate = createBlankBoard(parsedTitle.data);
 
     setCollection((currentCollection) => ({
       activeBoardId: boardToCreate.id,
@@ -109,9 +112,9 @@ export function useKanbanBoard(initialBoard: Board) {
   }, []);
 
   const renameBoard = useCallback((boardId: string, title: string) => {
-    const trimmedTitle = title.trim();
+    const parsedTitle = boardTitleSchema.safeParse(title);
 
-    if (!trimmedTitle) {
+    if (!parsedTitle.success) {
       return;
     }
 
@@ -123,8 +126,8 @@ export function useKanbanBoard(initialBoard: Board) {
         currentBoard.id === boardId
           ? {
               ...currentBoard,
-              title: trimmedTitle,
-              description: `Plan and track work for ${trimmedTitle}.`,
+              title: parsedTitle.data,
+              description: `Plan and track work for ${parsedTitle.data}.`,
               updatedAt: timestamp,
             }
           : currentBoard,
@@ -179,11 +182,17 @@ export function useKanbanBoard(initialBoard: Board) {
 
   const addTask = useCallback(
     (values: TaskFormValues) => {
+      const parsedValues = taskFormSchema.safeParse(values);
+
+      if (!parsedValues.success) {
+        return;
+      }
+
       const taskId = createId("task");
       const timestamp = new Date().toISOString();
       const task: Task = {
         id: taskId,
-        ...values,
+        ...parsedValues.data,
         subtasks: [],
         createdAt: timestamp,
         updatedAt: timestamp,
@@ -196,7 +205,7 @@ export function useKanbanBoard(initialBoard: Board) {
           [taskId]: task,
         },
         columns: currentBoard.columns.map((column) =>
-          column.id === values.status
+          column.id === parsedValues.data.status
             ? { ...column, taskIds: [...column.taskIds, taskId] }
             : column,
         ),
@@ -225,6 +234,12 @@ export function useKanbanBoard(initialBoard: Board) {
 
   const editTask = useCallback(
     (taskId: string, values: TaskFormValues) => {
+      const parsedValues = taskFormSchema.safeParse(values);
+
+      if (!parsedValues.success) {
+        return;
+      }
+
       const timestamp = new Date().toISOString();
 
       updateActiveBoard((currentBoard) => {
@@ -235,7 +250,7 @@ export function useKanbanBoard(initialBoard: Board) {
         }
 
         const movedColumns =
-          existingTask.status === values.status
+          existingTask.status === parsedValues.data.status
             ? currentBoard.columns
             : currentBoard.columns.map((column) => {
                 if (column.id === existingTask.status) {
@@ -245,7 +260,7 @@ export function useKanbanBoard(initialBoard: Board) {
                   };
                 }
 
-                if (column.id === values.status) {
+                if (column.id === parsedValues.data.status) {
                   return { ...column, taskIds: [...column.taskIds, taskId] };
                 }
 
@@ -258,7 +273,7 @@ export function useKanbanBoard(initialBoard: Board) {
             ...currentBoard.tasks,
             [taskId]: {
               ...existingTask,
-              ...values,
+              ...parsedValues.data,
               updatedAt: timestamp,
             },
           },
@@ -269,22 +284,28 @@ export function useKanbanBoard(initialBoard: Board) {
 
       const existingTask = board.tasks[taskId];
 
-      if (existingTask?.status !== "done" && values.status === "done") {
+      if (
+        existingTask?.status !== "done" &&
+        parsedValues.data.status === "done"
+      ) {
         void notifySlack({
           event: "task.completed",
           boardTitle: board.title,
-          taskTitle: values.title,
-          priority: values.priority,
+          taskTitle: parsedValues.data.title,
+          priority: parsedValues.data.priority,
         });
       }
 
-      if (values.assignee && values.assignee !== existingTask?.assignee) {
+      if (
+        parsedValues.data.assignee &&
+        parsedValues.data.assignee !== existingTask?.assignee
+      ) {
         void notifySlack({
           event: "task.assigned",
           boardTitle: board.title,
-          taskTitle: values.title,
-          assignee: values.assignee,
-          priority: values.priority,
+          taskTitle: parsedValues.data.title,
+          assignee: parsedValues.data.assignee,
+          priority: parsedValues.data.priority,
         });
       }
     },
@@ -309,7 +330,6 @@ export function useKanbanBoard(initialBoard: Board) {
           updatedAt: timestamp,
         };
       });
-
     },
     [updateActiveBoard],
   );

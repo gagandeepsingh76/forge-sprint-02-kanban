@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { X } from "lucide-react";
 import type { Task, TaskFormValues, TaskPriority, TaskStatus } from "@/types/kanban";
+import { taskFormSchema } from "@/lib/validations/kanban";
 
 const priorities: TaskPriority[] = ["low", "medium", "high", "urgent"];
 
@@ -44,17 +45,13 @@ export function AddTaskModal({
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!formValues.title.trim()) {
+    const parsedValues = taskFormSchema.safeParse(formValues);
+
+    if (!parsedValues.success) {
       return;
     }
 
-    onSubmit({
-      ...formValues,
-      title: formValues.title.trim(),
-      description: formValues.description.trim(),
-      assignee: formValues.assignee?.trim(),
-      dueDate: formValues.dueDate || undefined,
-    });
+    onSubmit(parsedValues.data);
   };
 
   return (

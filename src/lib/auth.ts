@@ -3,6 +3,8 @@ import "server-only";
 import { compare } from "bcryptjs";
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { env } from "@/lib/env";
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { loginSchema } from "@/lib/validations/auth";
 
@@ -13,6 +15,7 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
+  secret: env.NEXTAUTH_SECRET,
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -24,6 +27,7 @@ export const authOptions: NextAuthOptions = {
         const parsedCredentials = loginSchema.safeParse(credentials);
 
         if (!parsedCredentials.success) {
+          logger.warn("auth.credentials_invalid");
           return null;
         }
 
@@ -34,6 +38,9 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user?.passwordHash) {
+          logger.warn("auth.user_not_found", {
+            email: parsedCredentials.data.email,
+          });
           return null;
         }
 
@@ -43,6 +50,9 @@ export const authOptions: NextAuthOptions = {
         );
 
         if (!passwordMatches) {
+          logger.warn("auth.password_mismatch", {
+            userId: user.id,
+          });
           return null;
         }
 

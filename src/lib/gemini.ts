@@ -1,6 +1,7 @@
 import "server-only";
 
 import { z } from "zod";
+import { env } from "@/lib/env";
 
 const GEMINI_INTERACTIONS_URL =
   "https://generativelanguage.googleapis.com/v1beta/interactions";
@@ -26,9 +27,7 @@ export async function callGeminiJson<TSchema extends z.ZodType>({
   jsonSchema,
   responseSchema,
 }: GeminiJsonRequest<TSchema>): Promise<z.infer<TSchema>> {
-  const apiKey = process.env.GEMINI_API_KEY;
-
-  if (!apiKey) {
+  if (!env.GEMINI_API_KEY) {
     throw new GeminiConfigurationError();
   }
 
@@ -36,10 +35,10 @@ export async function callGeminiJson<TSchema extends z.ZodType>({
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-goog-api-key": apiKey,
+      "x-goog-api-key": env.GEMINI_API_KEY,
     },
     body: JSON.stringify({
-      model: process.env.GEMINI_MODEL ?? "gemini-3.5-flash",
+      model: env.GEMINI_MODEL,
       input: prompt,
       store: false,
       response_format: {

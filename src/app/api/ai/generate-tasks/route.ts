@@ -1,7 +1,13 @@
 import { getServerSession } from "next-auth";
 import { GeminiConfigurationError, callGeminiJson } from "@/lib/gemini";
 import { authOptions } from "@/lib/auth";
+import { apiOk } from "@/lib/api-response";
 import { generatedTasksJsonSchema } from "@/lib/ai-json-schemas";
+import {
+  HttpError,
+  parseJsonBody,
+  withRouteHandler,
+} from "@/lib/route-handler";
 import {
   generateTasksRequestSchema,
   generateTasksResponseSchema,
@@ -9,24 +15,18 @@ import {
 
 export const runtime = "nodejs";
 
-export async function POST(request: Request) {
+export const POST = withRouteHandler("ai.generate_tasks", async (request) => {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+    throw new HttpError(401, "Unauthorized", "UNAUTHORIZED");
   }
 
-  const body: unknown = await request.json().catch(() => null);
-  const parsedBody = generateTasksRequestSchema.safeParse(body);
-
-  if (!parsedBody.success) {
-    return Response.json(
-      { error: "Provide a project description with at least 20 characters." },
-      { status: 400 },
-    );
-  }
-
-  const { projectDescription, boardTitle, count } = parsedBody.data;
+  const { projectDescription, boardTitle, count } = await parseJsonBody(
+    request,
+    generateTasksRequestSchema,
+    "Provide a project description with at least 20 characters.",
+  );
 
   try {
     const result = await callGeminiJson({
@@ -42,15 +42,16 @@ export async function POST(request: Request) {
       ].join("\n"),
     });
 
-    return Response.json(result);
+    return apiOk(result);
   } catch (error) {
     if (error instanceof GeminiConfigurationError) {
-      return Response.json({ error: error.message }, { status: 503 });
+      throw new HttpError(503, error.message, "GEMINI_NOT_CONFIGURED");
     }
 
-    return Response.json(
-      { error: "Unable to generate tasks right now." },
-      { status: 502 },
+    throw new HttpError(
+      502,
+      "Unable to generate tasks right now.",
+      "GEMINI_REQUEST_FAILED",
     );
   }
-}
+});

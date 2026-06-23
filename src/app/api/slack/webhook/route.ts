@@ -1,34 +1,37 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { apiAccepted, apiOk } from "@/lib/api-response";
+import {
+  HttpError,
+  parseJsonBody,
+  withRouteHandler,
+} from "@/lib/route-handler";
 import { sendSlackNotification } from "@/lib/slack";
 import { slackNotificationSchema } from "@/lib/validations/slack";
 
 export const runtime = "nodejs";
 
-export async function POST(request: Request) {
+export const POST = withRouteHandler("slack.webhook", async (request) => {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+    throw new HttpError(401, "Unauthorized", "UNAUTHORIZED");
   }
 
-  const body: unknown = await request.json().catch(() => null);
-  const parsedBody = slackNotificationSchema.safeParse(body);
-
-  if (!parsedBody.success) {
-    return Response.json(
-      { error: "Provide a valid Slack notification payload." },
-      { status: 400 },
-    );
-  }
+  const body = await parseJsonBody(
+    request,
+    slackNotificationSchema,
+    "Provide a valid Slack notification payload.",
+  );
 
   try {
-    const result = await sendSlackNotification(parsedBody.data);
-    return Response.json(result, { status: result.skipped ? 202 : 200 });
+    const result = await sendSlackNotification(body);
+    return result.skipped ? apiAccepted(result) : apiOk(result);
   } catch {
-    return Response.json(
-      { error: "Unable to deliver Slack notification." },
-      { status: 502 },
+    throw new HttpError(
+      502,
+      "Unable to deliver Slack notification.",
+      "SLACK_DELIVERY_FAILED",
     );
   }
-}
+});

@@ -3,6 +3,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import type { Board } from "@/types/kanban";
+import { boardTitleSchema } from "@/lib/validations/kanban";
 
 type BoardModalMode = "create" | "rename";
 
@@ -47,13 +48,18 @@ export function BoardSwitcher({
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const parsedTitle = boardTitleSchema.safeParse(title);
+
+    if (!parsedTitle.success) {
+      return;
+    }
 
     if (modalMode === "create") {
-      onCreateBoard(title);
+      onCreateBoard(parsedTitle.data);
     }
 
     if (modalMode === "rename" && activeBoard) {
-      onRenameBoard(activeBoard.id, title);
+      onRenameBoard(activeBoard.id, parsedTitle.data);
     }
 
     closeModal();

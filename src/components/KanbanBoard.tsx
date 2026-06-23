@@ -19,6 +19,7 @@ import { AddTaskModal } from "@/components/AddTaskModal";
 import { EditTaskModal } from "@/components/EditTaskModal";
 import { KanbanColumn } from "@/components/KanbanColumn";
 import { Navbar } from "@/components/Navbar";
+import { OpenClawPanel } from "@/components/OpenClawPanel";
 import { Sidebar } from "@/components/Sidebar";
 
 export function KanbanBoard() {
@@ -170,6 +171,8 @@ export function KanbanBoard() {
             Last updated {new Date(board.updatedAt).toLocaleDateString()}
           </p>
         </section>
+
+        <OpenClawPanel boardTitle={board.title} onCreateTask={addTask} />
 
         <div className="grid gap-4 lg:grid-cols-[16rem_1fr]">
           <Sidebar

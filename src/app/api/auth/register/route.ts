@@ -1,27 +1,29 @@
 import { hash } from "bcryptjs";
 import { Prisma } from "@prisma/client";
+import { apiCreated } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
+import {
+  HttpError,
+  parseJsonBody,
+  withRouteHandler,
+} from "@/lib/route-handler";
 import { registerSchema } from "@/lib/validations/auth";
 
 export const runtime = "nodejs";
 
-export async function POST(request: Request) {
-  const body: unknown = await request.json().catch(() => null);
-  const parsedBody = registerSchema.safeParse(body);
-
-  if (!parsedBody.success) {
-    return Response.json(
-      { error: "Please provide a valid name, email, and password." },
-      { status: 400 },
-    );
-  }
+export const POST = withRouteHandler("auth.register", async (request) => {
+  const body = await parseJsonBody(
+    request,
+    registerSchema,
+    "Please provide a valid name, email, and password.",
+  );
 
   try {
-    const passwordHash = await hash(parsedBody.data.password, 12);
+    const passwordHash = await hash(body.password, 12);
     const user = await prisma.user.create({
       data: {
-        name: parsedBody.data.name,
-        email: parsedBody.data.email,
+        name: body.name,
+        email: body.email,
         passwordHash,
       },
       select: {
@@ -31,21 +33,23 @@ export async function POST(request: Request) {
       },
     });
 
-    return Response.json({ user }, { status: 201 });
+    return apiCreated({ user });
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2002"
     ) {
-      return Response.json(
-        { error: "An account with this email already exists." },
-        { status: 409 },
+      throw new HttpError(
+        409,
+        "An account with this email already exists.",
+        "ACCOUNT_EXISTS",
       );
     }
 
-    return Response.json(
-      { error: "Unable to create account right now." },
-      { status: 500 },
+    throw new HttpError(
+      500,
+      "Unable to create account right now.",
+      "ACCOUNT_CREATE_FAILED",
     );
   }
-}
+});
