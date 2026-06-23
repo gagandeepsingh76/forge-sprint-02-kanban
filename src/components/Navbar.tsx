@@ -1,6 +1,7 @@
 "use client";
 
-import { Moon, Plus, Sun } from "lucide-react";
+import { LogOut, Moon, Plus, Sun } from "lucide-react";
+import { signOut } from "next-auth/react";
 import { useTheme } from "@/hooks/use-theme";
 
 interface NavbarProps {
@@ -33,6 +34,14 @@ export function Navbar({ boardTitle, taskCount, onAddTask }: NavbarProps) {
             className="inline-flex size-10 items-center justify-center rounded-lg border border-border bg-surface text-slate-600 transition hover:bg-surface-muted focus:outline-none focus:ring-2 focus:ring-accent/40 dark:text-slate-200"
           >
             {isDark ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+          <button
+            type="button"
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            aria-label="Log out"
+            className="inline-flex size-10 items-center justify-center rounded-lg border border-border bg-surface text-slate-600 transition hover:bg-surface-muted focus:outline-none focus:ring-2 focus:ring-accent/40 dark:text-slate-200"
+          >
+            <LogOut size={18} />
           </button>
           <button
             type="button"
