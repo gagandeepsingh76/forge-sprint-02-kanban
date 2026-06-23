@@ -11,6 +11,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { CalendarClock, CheckCircle2, CircleDot, TimerReset } from "lucide-react";
 import { initialBoard } from "@/data/initial-board";
 import { useKanbanBoard } from "@/hooks/use-kanban-board";
 import type { Task, TaskFormValues, TaskStatus } from "@/types/kanban";
@@ -19,8 +20,15 @@ import { KanbanColumn } from "@/components/KanbanColumn";
 import { Navbar } from "@/components/Navbar";
 
 export function KanbanBoard() {
-  const { board, taskCount, addTask, editTask, deleteTask, moveTask, reorderTask } =
-    useKanbanBoard(initialBoard);
+  const {
+    board,
+    taskCount,
+    addTask,
+    editTask,
+    deleteTask,
+    moveTask,
+    reorderTask,
+  } = useKanbanBoard(initialBoard);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const sensors = useSensors(
@@ -93,7 +101,7 @@ export function KanbanBoard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen bg-background">
       <Navbar
         boardTitle={board.title}
         taskCount={taskCount}
@@ -101,24 +109,50 @@ export function KanbanBoard() {
       />
 
       <main className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8">
-        <div className="mb-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-            Dashboard
-          </p>
-          <div className="mt-2 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+        <section className="mb-6 grid gap-4 lg:grid-cols-[1fr_22rem]">
+          <div className="py-2">
+            <p className="text-sm font-semibold uppercase text-accent">
+              Dashboard
+            </p>
             <div>
-              <h2 className="text-xl font-bold text-slate-950">
+              <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground">
                 {board.description}
               </h2>
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
                 Add, edit, delete, and move tasks through the sprint workflow.
               </p>
             </div>
-            <p className="text-sm font-medium text-slate-500">
-              Last updated {new Date(board.updatedAt).toLocaleDateString()}
-            </p>
           </div>
-        </div>
+
+          <div className="grid grid-cols-3 gap-3 rounded-lg border border-border bg-surface p-3 shadow-sm">
+            <div className="rounded-md bg-teal-50 p-3 text-teal-900 dark:bg-teal-400/10 dark:text-teal-200">
+              <CircleDot size={18} />
+              <p className="mt-3 text-lg font-bold">{taskCount}</p>
+              <p className="text-xs font-semibold uppercase">Tasks</p>
+            </div>
+            <div className="rounded-md bg-indigo-50 p-3 text-indigo-900 dark:bg-indigo-400/10 dark:text-indigo-200">
+              <TimerReset size={18} />
+              <p className="mt-3 text-lg font-bold">
+                {board.columns.find((column) => column.id === "in-progress")
+                  ?.taskIds.length ?? 0}
+              </p>
+              <p className="text-xs font-semibold uppercase">Active</p>
+            </div>
+            <div className="rounded-md bg-emerald-50 p-3 text-emerald-900 dark:bg-emerald-400/10 dark:text-emerald-200">
+              <CheckCircle2 size={18} />
+              <p className="mt-3 text-lg font-bold">
+                {board.columns.find((column) => column.id === "done")?.taskIds
+                  .length ?? 0}
+              </p>
+              <p className="text-xs font-semibold uppercase">Done</p>
+            </div>
+          </div>
+
+          <p className="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400 lg:col-span-2">
+            <CalendarClock size={16} />
+            Last updated {new Date(board.updatedAt).toLocaleDateString()}
+          </p>
+        </section>
 
         <DndContext
           sensors={sensors}

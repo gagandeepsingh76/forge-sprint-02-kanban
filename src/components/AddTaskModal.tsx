@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { X } from "lucide-react";
 import type { Task, TaskFormValues, TaskPriority, TaskStatus } from "@/types/kanban";
 
 const priorities: TaskPriority[] = ["low", "medium", "high", "urgent"];
@@ -57,19 +58,29 @@ export function AddTaskModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-xl rounded-lg bg-white shadow-2xl">
-        <div className="border-b border-slate-200 px-6 py-4">
-          <h2 className="text-lg font-bold text-slate-950">
-            {editingTask ? "Edit task" : "Add task"}
-          </h2>
-          <p className="text-sm text-slate-500">
-            Capture the owner, priority, due date, and current status.
-          </p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
+      <div className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-lg bg-surface shadow-2xl ring-1 ring-border">
+        <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-4">
+          <div>
+            <h2 className="text-lg font-bold text-foreground">
+              {editingTask ? "Edit task" : "Add task"}
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Capture the owner, priority, due date, and current status.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close task modal"
+            className="inline-flex size-9 items-center justify-center rounded-md border border-border text-slate-500 transition hover:bg-surface-muted dark:text-slate-300"
+          >
+            <X size={17} />
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 px-6 py-5">
-          <label className="block text-sm font-semibold text-slate-700">
+          <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200">
             Title
             <input
               value={formValues.title}
@@ -79,13 +90,13 @@ export function AddTaskModal({
                   title: event.target.value,
                 }))
               }
-              className="mt-1 block w-full rounded-md border border-slate-200 px-3 py-2 text-slate-950 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+              className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-foreground outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
               placeholder="Write API contract"
               required
             />
           </label>
 
-          <label className="block text-sm font-semibold text-slate-700">
+          <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200">
             Description
             <textarea
               value={formValues.description}
@@ -95,13 +106,13 @@ export function AddTaskModal({
                   description: event.target.value,
                 }))
               }
-              className="mt-1 block min-h-28 w-full rounded-md border border-slate-200 px-3 py-2 text-slate-950 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+              className="mt-1 block min-h-28 w-full rounded-md border border-border bg-surface px-3 py-2 text-foreground outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
               placeholder="Add implementation notes, context, or acceptance criteria."
             />
           </label>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="block text-sm font-semibold text-slate-700">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200">
               Priority
               <select
                 value={formValues.priority}
@@ -111,7 +122,7 @@ export function AddTaskModal({
                     priority: event.target.value as TaskPriority,
                   }))
                 }
-                className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-950 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-foreground outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
               >
                 {priorities.map((priority) => (
                   <option key={priority} value={priority}>
@@ -121,7 +132,7 @@ export function AddTaskModal({
               </select>
             </label>
 
-            <label className="block text-sm font-semibold text-slate-700">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200">
               Status
               <select
                 value={formValues.status}
@@ -131,7 +142,7 @@ export function AddTaskModal({
                     status: event.target.value as TaskStatus,
                   }))
                 }
-                className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-950 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-foreground outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
               >
                 {statuses.map((status) => (
                   <option key={status} value={status}>
@@ -143,7 +154,7 @@ export function AddTaskModal({
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="block text-sm font-semibold text-slate-700">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200">
               Assignee
               <input
                 value={formValues.assignee}
@@ -153,12 +164,12 @@ export function AddTaskModal({
                     assignee: event.target.value,
                   }))
                 }
-                className="mt-1 block w-full rounded-md border border-slate-200 px-3 py-2 text-slate-950 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-foreground outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
                 placeholder="Design, API, QA"
               />
             </label>
 
-            <label className="block text-sm font-semibold text-slate-700">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200">
               Due date
               <input
                 type="date"
@@ -169,7 +180,7 @@ export function AddTaskModal({
                     dueDate: event.target.value,
                   }))
                 }
-                className="mt-1 block w-full rounded-md border border-slate-200 px-3 py-2 text-slate-950 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-foreground outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
               />
             </label>
           </div>
@@ -178,13 +189,13 @@ export function AddTaskModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              className="rounded-md border border-border px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-surface-muted dark:text-slate-200"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+              className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:brightness-95"
             >
               {editingTask ? "Save changes" : "Create task"}
             </button>

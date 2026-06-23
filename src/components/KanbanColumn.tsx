@@ -36,17 +36,19 @@ export function KanbanColumn({
   return (
     <section
       ref={setNodeRef}
-      className={`flex min-h-[28rem] flex-col rounded-lg border bg-slate-50 transition ${
-        isOver ? "border-slate-400 ring-2 ring-slate-200" : "border-slate-200"
+      className={`flex min-h-[28rem] flex-col rounded-lg border bg-surface-muted transition ${
+        isOver ? "border-accent ring-2 ring-accent/20" : "border-border"
       }`}
     >
-      <div className="border-b border-slate-200 p-4">
+      <div className="border-b border-border p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="font-semibold text-slate-950">{column.title}</h2>
-            <p className="text-sm text-slate-500">{column.description}</p>
+            <h2 className="font-semibold text-foreground">{column.title}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              {column.description}
+            </p>
           </div>
-          <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+          <span className="rounded-full bg-surface px-2.5 py-1 text-xs font-semibold text-slate-600 ring-1 ring-border dark:text-slate-300">
             {tasks.length}
           </span>
         </div>
@@ -69,7 +71,7 @@ export function KanbanColumn({
               />
             ))
           ) : (
-            <div className="flex min-h-40 items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white/70 p-6 text-center text-sm font-medium text-slate-400">
+            <div className="flex min-h-40 items-center justify-center rounded-lg border border-dashed border-border bg-surface/70 p-6 text-center text-sm font-medium text-slate-400">
               Drop new work here
             </div>
           )}
