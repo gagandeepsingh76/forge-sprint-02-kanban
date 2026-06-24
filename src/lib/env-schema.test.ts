@@ -41,6 +41,7 @@ describe("environment schema", () => {
       GEMINI_API_KEY: "",
       SLACK_WEBHOOK_URL: "''",
       OPENCLAW_GATEWAY_URL: ` "" `,
+      OPENROUTER_API_KEY: "''",
       LOG_LEVEL: "warn",
     });
 
@@ -50,6 +51,7 @@ describe("environment schema", () => {
       expect(parsedEnv.data.GEMINI_API_KEY).toBeUndefined();
       expect(parsedEnv.data.SLACK_WEBHOOK_URL).toBeUndefined();
       expect(parsedEnv.data.OPENCLAW_GATEWAY_URL).toBeUndefined();
+      expect(parsedEnv.data.OPENROUTER_API_KEY).toBeUndefined();
       expect(parsedEnv.data.LOG_LEVEL).toBe("warn");
     }
   });

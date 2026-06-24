@@ -4,6 +4,7 @@ import { apiOk } from "@/lib/api-response";
 import {
   OpenClawConfigurationError,
   callOpenClawAssistant,
+  getAssistantProviderStatus,
 } from "@/lib/openclaw";
 import {
   HttpError,
@@ -13,6 +14,10 @@ import {
 import { openClawAssistantRequestSchema } from "@/lib/validations/openclaw";
 
 export const runtime = "nodejs";
+
+export const GET = withRouteHandler("openclaw.assistant_status", () => {
+  return apiOk(getAssistantProviderStatus());
+});
 
 export const POST = withRouteHandler("openclaw.assistant", async (request) => {
   const session = await getServerSession(authOptions);

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Bot, Loader2, Plus, Sparkles } from "lucide-react";
 import type { TaskFormValues } from "@/types/kanban";
 import {
@@ -17,6 +17,11 @@ const modes: Array<{ value: OpenClawMode; label: string }> = [
   { value: "user-stories", label: "User stories" },
 ];
 
+interface AssistantStatus {
+  enabled: boolean;
+  provider: "openclaw" | "openrouter" | null;
+}
+
 interface OpenClawPanelProps {
   boardTitle: string;
   onCreateTask: (values: TaskFormValues) => void;
@@ -31,10 +36,46 @@ export function OpenClawPanel({
   const [result, setResult] = useState<OpenClawAssistantResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const [assistantStatus, setAssistantStatus] = useState<AssistantStatus>({
+    enabled: false,
+    provider: null,
+  });
 
   const generatedTasks = result
     ? [...result.tasks, ...result.backlog]
     : [];
+  const isAssistantUnavailable = !assistantStatus.enabled;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadAssistantStatus() {
+      try {
+        const response = await fetch("/api/openclaw/assistant", {
+          method: "GET",
+        });
+        const payload: unknown = await response.json();
+
+        if (cancelled || !response.ok) {
+          return;
+        }
+
+        const parsedStatus = assistantStatusSchema.safeParse(payload);
+
+        if (parsedStatus.success) {
+          setAssistantStatus(parsedStatus.data);
+        }
+      } catch {
+        // Leave assistant actions disabled when provider status cannot be read.
+      }
+    }
+
+    void loadAssistantStatus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -65,8 +106,20 @@ export function OpenClawPanel({
 
     if (!response.ok) {
       const payload = (await response.json().catch(() => null)) as {
+        code?: string;
         error?: string;
       } | null;
+
+      if (payload?.code === "OPENCLAW_NOT_CONFIGURED") {
+        setAssistantStatus({
+          enabled: false,
+          provider: null,
+        });
+        setError(null);
+        setIsPending(false);
+        return;
+      }
+
       setError(payload?.error ?? "OpenClaw request failed.");
       setIsPending(false);
       return;
@@ -117,8 +170,9 @@ export function OpenClawPanel({
         >
           <select
             value={mode}
+            disabled={isAssistantUnavailable || isPending}
             onChange={(event) => setMode(event.target.value as OpenClawMode)}
-            className="h-10 rounded-md border border-border bg-surface px-3 text-sm font-semibold text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+            className="h-10 rounded-md border border-border bg-surface px-3 text-sm font-semibold text-foreground outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {modes.map((item) => (
               <option key={item.value} value={item.value}>
@@ -128,14 +182,15 @@ export function OpenClawPanel({
           </select>
           <input
             value={prompt}
+            disabled={isAssistantUnavailable || isPending}
             onChange={(event) => setPrompt(event.target.value)}
             placeholder="Plan onboarding, AI tasks, backlog grooming..."
-            className="h-10 rounded-md border border-border bg-surface px-3 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+            className="h-10 rounded-md border border-border bg-surface px-3 text-sm text-foreground outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-60"
             required
           />
           <button
             type="submit"
-            disabled={isPending}
+            disabled={isAssistantUnavailable || isPending}
             className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-accent px-4 text-sm font-semibold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isPending ? (
@@ -148,7 +203,13 @@ export function OpenClawPanel({
         </form>
       </div>
 
-      {error ? (
+      {isAssistantUnavailable ? (
+        <p className="mt-4 text-sm font-medium text-slate-500 dark:text-slate-400">
+          Assistant actions are unavailable.
+        </p>
+      ) : null}
+
+      {error && assistantStatus.enabled ? (
         <p className="mt-4 rounded-md bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800 dark:bg-amber-400/10 dark:text-amber-200">
           {error}
         </p>

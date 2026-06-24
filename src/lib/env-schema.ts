@@ -43,6 +43,7 @@ export const envSchema = z.object({
   GEMINI_API_KEY: optionalString,
   GEMINI_MODEL: z.string().min(1).default("gemini-3.5-flash"),
   OPENROUTER_API_KEY: optionalString,
+  OPENROUTER_MODEL: z.string().min(1).default("~openai/gpt-latest"),
   SLACK_WEBHOOK_URL: optionalUrl,
   OPENCLAW_GATEWAY_URL: optionalUrl,
   OPENCLAW_GATEWAY_TOKEN: optionalString,
