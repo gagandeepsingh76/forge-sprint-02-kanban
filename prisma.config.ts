@@ -1,4 +1,6 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+
+dotenv.config({ path: ".env.local" });
 
 import { defineConfig } from "prisma/config";
 import { z } from "zod";
@@ -6,7 +8,9 @@ import { z } from "zod";
 const databaseUrlSchema = z
   .string()
   .min(1)
-  .default("postgresql://postgres:postgres@localhost:5432/forge_sprint_kanban");
+  .default(
+    "postgresql://postgres:postgres@localhost:5432/forge_sprint_kanban"
+  );
 
 const databaseUrl = databaseUrlSchema.parse(process.env.DATABASE_URL);
 
