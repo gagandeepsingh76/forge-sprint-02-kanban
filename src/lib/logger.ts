@@ -1,3 +1,5 @@
+import { cleanEnvValue, logLevelSchema } from "@/lib/env-schema";
+
 type LogLevel = "debug" | "info" | "warn" | "error";
 
 type LogMeta = Record<string, unknown>;
@@ -9,9 +11,12 @@ const levelWeights: Record<LogLevel, number> = {
   error: 40,
 };
 
-const configuredLevel = process.env.LOG_LEVEL as LogLevel | undefined;
-const minimumLevel =
-  configuredLevel && configuredLevel in levelWeights ? configuredLevel : "info";
+const parsedConfiguredLevel = logLevelSchema.safeParse(
+  cleanEnvValue(process.env.LOG_LEVEL),
+);
+const minimumLevel = parsedConfiguredLevel.success
+  ? parsedConfiguredLevel.data
+  : "info";
 
 function serializeError(error: unknown): unknown {
   if (error instanceof Error) {

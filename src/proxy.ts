@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { normalizeEnvRecord } from "@/lib/env-schema";
 
 interface RateLimitBucket {
   count: number;
@@ -15,7 +16,7 @@ const proxyEnvSchema = z.object({
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(120),
   AI_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(30),
 });
-const proxyEnv = proxyEnvSchema.parse(process.env);
+const proxyEnv = proxyEnvSchema.parse(normalizeEnvRecord(process.env));
 
 function getClientKey(request: NextRequest) {
   const forwardedFor = request.headers.get("x-forwarded-for");
