@@ -163,7 +163,7 @@ Gemini route errors: `401 UNAUTHORIZED`, `400 VALIDATION_ERROR`, `503 GEMINI_NOT
 
 ### `POST /api/openclaw/assistant`
 
-Calls an OpenClaw-compatible `/v1/responses` gateway. Requires authentication and `OPENCLAW_GATEWAY_URL` plus `OPENCLAW_GATEWAY_TOKEN` or `OPENCLAW_GATEWAY_PASSWORD`.
+Calls the configured assistant provider. Requires authentication. OpenClaw is used when `OPENCLAW_GATEWAY_URL` plus `OPENCLAW_GATEWAY_TOKEN` or `OPENCLAW_GATEWAY_PASSWORD` are configured; otherwise the route falls back to OpenRouter when `OPENROUTER_API_KEY` is configured.
 
 Request:
 
@@ -189,7 +189,7 @@ Success `200`:
 }
 ```
 
-Common errors: `401 UNAUTHORIZED`, `400 VALIDATION_ERROR`, `503 OPENCLAW_NOT_CONFIGURED`, `502 OPENCLAW_REQUEST_FAILED`.
+Common errors: `401 UNAUTHORIZED`, `400 VALIDATION_ERROR`, `503 OPENCLAW_NOT_CONFIGURED` when neither OpenClaw nor OpenRouter is configured, `502 OPENCLAW_REQUEST_FAILED`.
 
 ## Slack
 

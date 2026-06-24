@@ -22,7 +22,15 @@ export const openClawAssistantResponseSchema = z.object({
   userStories: z.array(z.string()).default([]),
 });
 
+export const assistantProviderStatusSchema = z.object({
+  enabled: z.boolean(),
+  provider: z.enum(["openclaw", "openrouter"]).nullable(),
+});
+
 export type OpenClawMode = z.infer<typeof openClawModeSchema>;
 export type OpenClawAssistantResponse = z.infer<
   typeof openClawAssistantResponseSchema
+>;
+export type AssistantProviderStatus = z.infer<
+  typeof assistantProviderStatusSchema
 >;

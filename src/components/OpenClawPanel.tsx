@@ -4,8 +4,10 @@ import { FormEvent, useEffect, useState } from "react";
 import { Bot, Loader2, Plus, Sparkles } from "lucide-react";
 import type { TaskFormValues } from "@/types/kanban";
 import {
+  assistantProviderStatusSchema,
   openClawAssistantRequestSchema,
   openClawAssistantResponseSchema,
+  type AssistantProviderStatus,
   type OpenClawAssistantResponse,
   type OpenClawMode,
 } from "@/lib/validations/openclaw";
@@ -16,11 +18,6 @@ const modes: Array<{ value: OpenClawMode; label: string }> = [
   { value: "backlog", label: "Backlog" },
   { value: "user-stories", label: "User stories" },
 ];
-
-interface AssistantStatus {
-  enabled: boolean;
-  provider: "openclaw" | "openrouter" | null;
-}
 
 interface OpenClawPanelProps {
   boardTitle: string;
@@ -36,10 +33,11 @@ export function OpenClawPanel({
   const [result, setResult] = useState<OpenClawAssistantResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
-  const [assistantStatus, setAssistantStatus] = useState<AssistantStatus>({
-    enabled: false,
-    provider: null,
-  });
+  const [assistantStatus, setAssistantStatus] =
+    useState<AssistantProviderStatus>({
+      enabled: false,
+      provider: null,
+    });
 
   const generatedTasks = result
     ? [...result.tasks, ...result.backlog]
@@ -60,7 +58,7 @@ export function OpenClawPanel({
           return;
         }
 
-        const parsedStatus = assistantStatusSchema.safeParse(payload);
+        const parsedStatus = assistantProviderStatusSchema.safeParse(payload);
 
         if (parsedStatus.success) {
           setAssistantStatus(parsedStatus.data);
@@ -120,7 +118,7 @@ export function OpenClawPanel({
         return;
       }
 
-      setError(payload?.error ?? "OpenClaw request failed.");
+      setError(payload?.error ?? "Assistant request failed.");
       setIsPending(false);
       return;
     }
@@ -129,7 +127,7 @@ export function OpenClawPanel({
     const parsedPayload = openClawAssistantResponseSchema.safeParse(payload);
 
     if (!parsedPayload.success) {
-      setError("OpenClaw returned an unexpected response.");
+      setError("Assistant returned an unexpected response.");
       setIsPending(false);
       return;
     }

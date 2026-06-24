@@ -89,11 +89,22 @@ The image uses a multi-stage Node 22 Alpine build and copies Next.js standalone 
 
 ## OpenClaw
 
+OpenClaw is optional. The assistant panel works with OpenRouter when `OPENROUTER_API_KEY` is configured.
+
+OpenRouter setup:
+
+1. Create an API key in the OpenRouter dashboard.
+2. Set `OPENROUTER_API_KEY` in the deployment environment.
+3. Optionally set `OPENROUTER_MODEL`; the default is `~openai/gpt-latest`.
+4. Use the dashboard assistant panel while signed in.
+
+OpenClaw gateway setup:
+
 1. Provision an OpenClaw-compatible gateway that accepts `POST /v1/responses`.
 2. Set `OPENCLAW_GATEWAY_URL`.
 3. Set `OPENCLAW_GATEWAY_TOKEN`; `OPENCLAW_GATEWAY_PASSWORD` is supported as a fallback.
 4. Optionally set `OPENCLAW_AGENT_ID` and `OPENCLAW_MODEL`.
-5. Use the dashboard OpenClaw panel while signed in.
+5. When both OpenClaw and OpenRouter are configured, OpenClaw is used first.
 
 ## Validation
 

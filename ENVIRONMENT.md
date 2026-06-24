@@ -12,9 +12,11 @@ Copy `.env.example` to `.env.local` for development. Production secrets should b
 | `NEXTAUTH_URL` | Yes for non-Vercel | None | Canonical app URL, for example `https://kanban.example.com`. |
 | `GEMINI_API_KEY` | No | None | Enables Gemini AI routes. Routes return `503` when missing. |
 | `GEMINI_MODEL` | No | `gemini-3.5-flash` | Model passed to the Gemini interactions API. |
+| `OPENROUTER_API_KEY` | No | None | Enables the assistant panel when OpenClaw is not configured. |
+| `OPENROUTER_MODEL` | No | `~openai/gpt-latest` | Model sent to OpenRouter for assistant panel fallback. |
 | `SLACK_WEBHOOK_URL` | No | None | Enables Slack incoming webhook delivery. Missing value returns skipped Slack results. |
-| `OPENCLAW_GATEWAY_URL` | No | None | Base URL for the OpenClaw-compatible gateway. |
-| `OPENCLAW_GATEWAY_TOKEN` | No | None | Bearer token for OpenClaw. |
+| `OPENCLAW_GATEWAY_URL` | No | None | Base URL for an optional OpenClaw-compatible gateway. Takes precedence over OpenRouter when paired with a token. |
+| `OPENCLAW_GATEWAY_TOKEN` | No | None | Bearer token for the optional OpenClaw gateway. |
 | `OPENCLAW_GATEWAY_PASSWORD` | No | None | Legacy fallback when `OPENCLAW_GATEWAY_TOKEN` is unset. |
 | `OPENCLAW_AGENT_ID` | No | `main` | Sent as `x-openclaw-agent-id`. |
 | `OPENCLAW_MODEL` | No | `openclaw/default` | Model name sent to OpenClaw. |
@@ -37,13 +39,13 @@ Preview:
 
 - Use a separate `DATABASE_URL` from production when testing migrations.
 - Keep `NEXTAUTH_SECRET` stable across preview redeploys.
-- Add Gemini, Slack, and OpenClaw keys only when previews need live integrations.
+- Add Gemini, Slack, OpenRouter, and OpenClaw keys only when previews need live integrations.
 
 Production:
 
 - Require `DATABASE_URL`, `NEXTAUTH_SECRET`, and a canonical app URL.
 - Use pooled PostgreSQL connections for serverless deployments.
-- Rotate AI, Slack, and OpenClaw credentials through the hosting platform.
+- Rotate AI, Slack, OpenRouter, and OpenClaw credentials through the hosting platform.
 
 ## Security Notes
 
