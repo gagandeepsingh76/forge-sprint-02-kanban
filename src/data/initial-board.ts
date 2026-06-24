@@ -1,6 +1,6 @@
 import type { Board, Task } from "@/types/kanban";
 
-const now = new Date().toISOString();
+const initialTimestamp = "2026-06-24T00:00:00.000Z";
 
 const tasks: Record<string, Task> = {
   "task-discovery": {
@@ -13,8 +13,8 @@ const tasks: Record<string, Task> = {
     assignee: "Product",
     status: "todo",
     subtasks: [],
-    createdAt: now,
-    updatedAt: now,
+    createdAt: initialTimestamp,
+    updatedAt: initialTimestamp,
   },
   "task-schema": {
     id: "task-schema",
@@ -26,8 +26,8 @@ const tasks: Record<string, Task> = {
     assignee: "Engineering",
     status: "todo",
     subtasks: [],
-    createdAt: now,
-    updatedAt: now,
+    createdAt: initialTimestamp,
+    updatedAt: initialTimestamp,
   },
   "task-board-ui": {
     id: "task-board-ui",
@@ -39,8 +39,8 @@ const tasks: Record<string, Task> = {
     assignee: "Frontend",
     status: "in-progress",
     subtasks: [],
-    createdAt: now,
-    updatedAt: now,
+    createdAt: initialTimestamp,
+    updatedAt: initialTimestamp,
   },
   "task-bootstrap": {
     id: "task-bootstrap",
@@ -51,8 +51,8 @@ const tasks: Record<string, Task> = {
     assignee: "Platform",
     status: "done",
     subtasks: [],
-    createdAt: now,
-    updatedAt: now,
+    createdAt: initialTimestamp,
+    updatedAt: initialTimestamp,
   },
 };
 
@@ -81,6 +81,6 @@ export const initialBoard: Board = {
     },
   ],
   tasks,
-  createdAt: now,
-  updatedAt: now,
+  createdAt: initialTimestamp,
+  updatedAt: initialTimestamp,
 };

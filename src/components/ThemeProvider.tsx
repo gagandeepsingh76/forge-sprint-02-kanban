@@ -1,6 +1,12 @@
 "use client";
 
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import {
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { Theme, ThemeContext } from "@/hooks/use-theme";
 
 const THEME_STORAGE_KEY = "forge-sprint-theme";
@@ -16,9 +22,16 @@ function getPreferredTheme(): Theme {
     return storedTheme;
   }
 
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
+  return typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
+}
+
+function applyTheme(theme: Theme) {
+  document.documentElement.classList.toggle("dark", theme === "dark");
+  document.documentElement.style.colorScheme = theme;
+  window.localStorage.setItem(THEME_STORAGE_KEY, theme);
 }
 
 interface ThemeProviderProps {
@@ -26,23 +39,50 @@ interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(getPreferredTheme);
+  const [theme, setTheme] = useState<Theme>("light");
+  const [isThemeResolved, setIsThemeResolved] = useState(false);
 
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", theme === "dark");
-    document.documentElement.style.colorScheme = theme;
-    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
-  }, [theme]);
+    let cancelled = false;
+
+    queueMicrotask(() => {
+      if (cancelled) {
+        return;
+      }
+
+      const preferredTheme = getPreferredTheme();
+
+      setTheme(preferredTheme);
+      setIsThemeResolved(true);
+      applyTheme(preferredTheme);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isThemeResolved) {
+      return;
+    }
+
+    applyTheme(theme);
+  }, [isThemeResolved, theme]);
+
+  const toggleTheme = useCallback(() => {
+    setTheme((currentTheme) =>
+      currentTheme === "dark" ? "light" : "dark",
+    );
+  }, []);
 
   const value = useMemo(
     () => ({
       theme,
-      toggleTheme: () =>
-        setTheme((currentTheme) =>
-          currentTheme === "dark" ? "light" : "dark",
-        ),
+      isThemeResolved,
+      toggleTheme,
     }),
-    [theme],
+    [isThemeResolved, theme, toggleTheme],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

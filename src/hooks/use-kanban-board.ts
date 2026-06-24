@@ -59,10 +59,33 @@ const createBlankBoard = (title: string): Board => {
   };
 };
 
+const createInitialCollection = (initialBoard: Board): BoardCollection => ({
+  activeBoardId: initialBoard.id,
+  boards: [initialBoard],
+});
+
 export function useKanbanBoard(initialBoard: Board) {
   const [collection, setCollection] = useState<BoardCollection>(() =>
-    loadBoardCollection(initialBoard),
+    createInitialCollection(initialBoard),
   );
+  const [isStorageLoaded, setIsStorageLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    queueMicrotask(() => {
+      if (cancelled) {
+        return;
+      }
+
+      setCollection(loadBoardCollection(initialBoard));
+      setIsStorageLoaded(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialBoard]);
 
   const board = useMemo(() => {
     return (
@@ -77,8 +100,12 @@ export function useKanbanBoard(initialBoard: Board) {
   const taskCount = useMemo(() => Object.keys(board.tasks).length, [board.tasks]);
 
   useEffect(() => {
+    if (!isStorageLoaded) {
+      return;
+    }
+
     saveBoardCollection(collection);
-  }, [collection]);
+  }, [collection, isStorageLoaded]);
 
   const updateActiveBoard = useCallback((updater: (board: Board) => Board) => {
     setCollection((currentCollection) => ({

@@ -50,6 +50,8 @@ export const POST = withRouteHandler("auth.register", async (request) => {
       500,
       "Unable to create account right now.",
       "ACCOUNT_CREATE_FAILED",
+      undefined,
+      error,
     );
   }
 });

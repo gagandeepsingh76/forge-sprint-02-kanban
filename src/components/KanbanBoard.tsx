@@ -22,6 +22,10 @@ import { Navbar } from "@/components/Navbar";
 import { OpenClawPanel } from "@/components/OpenClawPanel";
 import { Sidebar } from "@/components/Sidebar";
 
+const updatedAtFormatter = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "UTC",
+});
+
 export function KanbanBoard() {
   const {
     board,
@@ -168,7 +172,7 @@ export function KanbanBoard() {
 
           <p className="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400 lg:col-span-2">
             <CalendarClock size={16} />
-            Last updated {new Date(board.updatedAt).toLocaleDateString()}
+            Last updated {updatedAtFormatter.format(new Date(board.updatedAt))}
           </p>
         </section>
 
@@ -185,6 +189,7 @@ export function KanbanBoard() {
           />
 
           <DndContext
+            id="kanban-board"
             sensors={sensors}
             collisionDetection={closestCorners}
             onDragEnd={handleDragEnd}

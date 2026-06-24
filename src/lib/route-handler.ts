@@ -12,8 +12,9 @@ export class HttpError extends Error {
     message: string,
     code = "HTTP_ERROR",
     details?: unknown,
+    cause?: unknown,
   ) {
-    super(message);
+    super(message, { cause });
     this.name = "HttpError";
     this.status = status;
     this.code = code;

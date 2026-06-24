@@ -1,9 +1,9 @@
 "use client";
 
-import { LogOut, Moon, Plus, Sun } from "lucide-react";
+import { LogOut, Plus } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { BoardSwitcher } from "@/components/BoardSwitcher";
-import { useTheme } from "@/hooks/use-theme";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import type { Board } from "@/types/kanban";
 
 interface NavbarProps {
@@ -29,9 +29,6 @@ export function Navbar({
   onRenameBoard,
   onDeleteBoard,
 }: NavbarProps) {
-  const { theme, toggleTheme } = useTheme();
-  const isDark = theme === "dark";
-
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-surface/90 px-4 py-4 shadow-sm backdrop-blur md:px-8">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -53,14 +50,7 @@ export function Navbar({
           <div className="rounded-full border border-border bg-surface-muted px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300">
             {taskCount} tasks
           </div>
-          <button
-            type="button"
-            onClick={toggleTheme}
-            aria-label={`Switch to ${isDark ? "light" : "dark"} theme`}
-            className="inline-flex size-10 items-center justify-center rounded-lg border border-border bg-surface text-slate-600 transition hover:bg-surface-muted focus:outline-none focus:ring-2 focus:ring-accent/40 dark:text-slate-200"
-          >
-            {isDark ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
+          <ThemeToggle />
           <button
             type="button"
             onClick={() => signOut({ callbackUrl: "/login" })}
