@@ -49,8 +49,8 @@ export const POST = withRouteHandler(
 
       throw new HttpError(
         502,
-        "Unable to reach OpenClaw assistant.",
-        "OPENCLAW_REQUEST_FAILED",
+        "",
+        "",
         undefined,
         error,
       );
